@@ -132,6 +132,48 @@ transmute(flights,
                                                      # solve midnight as 2400
           )
 
+# dplyr summarise
+summarise(flights, delay = mean(dep_delay, na.rm = TRUE))
+
+by_day <- group_by(flights, year, month, day)
+summarise(by_day, delay = mean(dep_delay, na.rm = TRUE))
+
+# example analysis without pipe
+by_dest <- group_by(flights, dest)
+delay <- summarise(by_dest,
+                   count = n(),
+                   dist = mean(distance, na.rm = TRUE),
+                   delay = mean(arr_delay, na.rm = TRUE))
+delay <- filter(delay, count > 20, dest != 'HNL')
+ggplot(delay, mapping = aes(x = dist, y = delay)) +
+        geom_point(aes(size = count), alpha = 1/3) +
+        geom_smooth(se = FALSE)
+
+# example analysis with pipe
+delays <- flights %>%
+        group_by(dest) %>%
+        summarise(
+                count = n(),
+                dist = mean(distance, na.rm = TRUE),
+                delay = mean(arr_delay, na.rm = TRUE)
+        ) %>%
+        filter(count > 20, dest != 'HNL')
+ggplot(delays, mapping = aes(x = dist, y = delay)) +
+        geom_point(aes(size = count), alpha = 1/3) +
+        geom_smooth(se = FALSE)
+
+
+# if we dont use the paramter na.rm = FALSE, NA values are considered
+flights %>%
+        group_by(year, month, day) %>%
+        summarise(mean = mean(dep_delay))
+
+# another way of solving this besides na.rm is excluding the data before
+not_cancelled <- flights %>%
+        filter(!is.na(dep_delay), !is.na(arr_delay))
+not_cancelled %>%
+        group_by(year, month, day) %>%
+        summarise(mean = mean(dep_delay))
 
 
 
